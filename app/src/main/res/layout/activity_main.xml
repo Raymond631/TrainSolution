@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:weightSum="1">
+    <androidx.appcompat.widget.Toolbar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            android:theme="?attr/actionBarTheme"
+            android:minHeight="?attr/actionBarSize"
+            android:id="@+id/toolbar">
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="测试版"
+                android:textColor="#FFFFFF"
+                android:textSize="28dp"/>
+    </androidx.appcompat.widget.Toolbar>
+
+    <EditText
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:id="@+id/fromStationName"
+            android:hint="出发站"/>
+
+    <EditText
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:id="@+id/toStationName"
+            android:hint="到达站"/>
+
+    <Button
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/search"
+            android:onClick="search"
+            android:hint="查询" android:textColor="#FFFFFF" android:textColorHint="#FFFFFF" android:textSize="24sp"/>
+</LinearLayout>
