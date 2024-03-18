@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bin.david.form.core.SmartTable;
 import com.bin.david.form.data.style.FontStyle;
@@ -27,12 +28,18 @@ import java.util.List;
 
 public class TableActivity extends AppCompatActivity {
     private final Handler handler = new Handler();
+    private Thread thread;
     private String TAG = "TableActivity";
     private SmartTable<Result> resultTable;
     private boolean isFirst = true;
     private DatabaseHelper dbHelper;
+
+    private DirectedWeightedMultigraph<String, DefaultWeightedEdge> graph;
+
     private String fromStationName;
     private String toStationName;
+    private int maxTransfer;
+    private int resultLength;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,24 +53,21 @@ public class TableActivity extends AppCompatActivity {
         Intent intent = getIntent();
         fromStationName = intent.getStringExtra("fromStationName");
         toStationName = intent.getStringExtra("toStationName");
-    }
+        maxTransfer = intent.getIntExtra("maxTransfer", 5);
+        resultLength = intent.getIntExtra("resultLength", 20);
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        new Thread(() -> {
-            getShortPaths(fromStationName, toStationName);
-        }).start();
+        thread = new Thread(this::getShortPaths);
+        thread.start();
     }
 
 
-    public void getShortPaths(String source, String target) {
-        DirectedWeightedMultigraph<String, DefaultWeightedEdge> graph = buildGraph();
-        yenShortestPath(graph, source, target);
+    public void getShortPaths() {
+        buildGraph();
+        yenShortestPath(fromStationName, toStationName);
     }
 
-    private DirectedWeightedMultigraph<String, DefaultWeightedEdge> buildGraph() {
-        DirectedWeightedMultigraph<String, DefaultWeightedEdge> graph = new DirectedWeightedMultigraph<>(DefaultWeightedEdge.class);
+    private void buildGraph() {
+        graph = new DirectedWeightedMultigraph<>(DefaultWeightedEdge.class);
 
         String sql = "select from_station_name, to_station_name, min(price) as price from train_data_processed group by from_station_name, to_station_name";
         try (SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -87,30 +91,27 @@ public class TableActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return graph;
     }
 
-    private void yenShortestPath(DirectedWeightedMultigraph<String, DefaultWeightedEdge> graph, String source, String target) {
+    private void yenShortestPath(String source, String target) {
         try {
             YenShortestPathIterator<String, DefaultWeightedEdge> iterator = new YenShortestPathIterator<>(graph, source, target);
             int count = 0;
             while (iterator.hasNext()) {
-                if (count++ > 20) {
+                if (Thread.currentThread().isInterrupted()) {
+                    graph = null;
+                    throw new InterruptedException();
+                }
+                if (count++ >= resultLength) {
+                    graph = null;
                     break;
                 }
                 GraphPath<String, DefaultWeightedEdge> path = iterator.next();
-
-                List<String> p = path.getVertexList();
-                List<Train> trainList = new ArrayList<>();
-                for (int i = 0; i < p.size() - 1; i++) {
-                    String u = p.get(i);
-                    String v = p.get(i + 1);
-                    double price = graph.getEdgeWeight(graph.getEdge(u, v));
-                    trainList.add(new Train(u, v, price));
+                if (path.getLength() > maxTransfer + 1) {
+                    continue;
                 }
-                Result result = new Result(p, path.getWeight(), "");
 
+                Result result = new Result(path.getVertexList(), path.getWeight(), "");
                 if (isFirst) {
                     isFirst = false;
                     handler.post(() -> resultTable.setData(Collections.singletonList(result)));
@@ -127,6 +128,36 @@ public class TableActivity extends AppCompatActivity {
         }
     }
 
+    // 点击函数
+    public void addTime(View view) {
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
+        List<Result> results = resultTable.getTableData().getT();
+        for (int i = 0, len1 = results.size(); i < len1; i++) {
+            List<String> path = results.get(i).getPath();  // 路径
+
+            List<Train> trainList = new ArrayList<>();  // 分段路径
+            for (int j = 0, len2 = path.size(); j < len2 - 1; j++) {
+                String u = path.get(j);
+                String v = path.get(j + 1);
+                double price = 0;
+                String sql = "select min(price) as price from train_data_processed where from_station_name = ? and to_station_name = ?";
+                try (SQLiteDatabase db = dbHelper.getReadableDatabase(); Cursor cursor = db.rawQuery(sql, new String[]{u, v})) {
+                    if (cursor.moveToFirst()) {
+                        price = cursor.getDouble(0);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                trainList.add(new Train(u, v, price));
+            }
+            results.get(i).setTimeCost(computeTimeCost(trainList));
+            handler.post(() -> resultTable.setData(results));
+        }
+    }
+
 
     private String computeTimeCost(List<Train> trainList) {
         // 查询每段车程的时间
@@ -134,11 +165,7 @@ public class TableActivity extends AppCompatActivity {
         String sql = "SELECT start_time, arrive_time, arrive_day_diff FROM train_data_processed WHERE from_station_name = ? AND to_station_name = ? AND price = ?";
         try (SQLiteDatabase db = dbHelper.getReadableDatabase()) {
             for (Train train : trainList) {
-                String fromStationName = train.getFromStationName();
-                String toStationName = train.getToStationName();
-                double price = train.getPrice();
-
-                try (Cursor cursor = db.rawQuery(sql, new String[]{fromStationName, toStationName, String.valueOf(price)})) {
+                try (Cursor cursor = db.rawQuery(sql, new String[]{train.getFromStationName(), train.getToStationName(), String.valueOf(train.getPrice())})) {
                     List<TrainTime> partOfPath = new ArrayList<>();
                     while (cursor.moveToFirst()) {
                         partOfPath.add(new TrainTime(
@@ -155,8 +182,7 @@ public class TableActivity extends AppCompatActivity {
         }
 
         // 笛卡尔积
-        List<List<TrainTime>> result = new ArrayList<>();
-        cartesianProduct(pathList, result, 0, new ArrayList<>());
+        List<List<TrainTime>> result = cartesianProduct(pathList);
 
         // 计算最短时间
         int minTimeCost = Integer.MAX_VALUE;
@@ -179,17 +205,35 @@ public class TableActivity extends AppCompatActivity {
         return String.format("%d时%d分", hour, minute);
     }
 
-    private void cartesianProduct(List<List<TrainTime>> input, List<List<TrainTime>> result, int index, List<TrainTime> current) {
-        if (index == input.size()) {
-            result.add(new ArrayList<>(current));
-            return;
+    private <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
+        List<List<T>> result = new ArrayList<>();
+        result.add(new ArrayList<>());
+
+        for (List<T> list : lists) {
+            List<List<T>> temp = new ArrayList<>();
+            for (List<T> res : result) {
+                for (T item : list) {
+                    List<T> newList = new ArrayList<>(res);
+                    newList.add(item);
+                    temp.add(newList);
+                }
+            }
+            result = temp;
         }
-        for (TrainTime i : input.get(index)) {
-            current.add(i);
-            cartesianProduct(input, result, index + 1, current);
-            current.remove(current.size() - 1);
-        }
+        return result;
     }
+
+//    private void cartesianProduct(List<List<TrainTime>> input, List<List<TrainTime>> result, int index, List<TrainTime> current) {
+//        if (index == input.size()) {
+//            result.add(new ArrayList<>(current));
+//            return;
+//        }
+//        for (TrainTime i : input.get(index)) {
+//            current.add(i);
+//            cartesianProduct(input, result, index + 1, current);
+//            current.remove(current.size() - 1);
+//        }
+//    }
 
     private int timeStrCompute(String endTime, String startTime, int dayDiff) {
         LocalTime start = LocalTime.parse(startTime);

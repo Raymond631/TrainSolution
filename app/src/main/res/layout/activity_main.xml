@@ -20,17 +20,35 @@
                 android:textSize="28dp"/>
     </androidx.appcompat.widget.Toolbar>
 
-    <EditText
+
+    <AutoCompleteTextView
+            android:id="@+id/fromStationName"
             android:layout_width="match_parent"
             android:layout_height="75dp"
-            android:id="@+id/fromStationName"
-            android:hint="出发站"/>
+            android:hint="出发站"
+            android:completionThreshold="1"
+            android:dropDownHorizontalOffset="10dp"/>
+
+    <AutoCompleteTextView
+            android:id="@+id/toStationName"
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:hint="到达站"
+            android:completionThreshold="1"
+            android:dropDownHorizontalOffset="10dp"/>
 
     <EditText
             android:layout_width="match_parent"
             android:layout_height="75dp"
-            android:id="@+id/toStationName"
-            android:hint="到达站"/>
+            android:id="@+id/maxTransfer"
+            android:hint="最多几次中转？"
+            android:text="3"/>
+    <EditText
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:id="@+id/resultLength"
+            android:hint="返回几条结果？"
+            android:text="10"/>
 
     <Button
             android:layout_gravity="center"
