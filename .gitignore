@@ -3,6 +3,7 @@ libs/
 gradle/
 gradlew
 gradlew.bat
+release/
 
 *.iml
 .gradle

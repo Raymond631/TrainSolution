@@ -16,6 +16,15 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // 自定义打包名称
+    android.applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
+            outputFileName = "GenerateAPK_v${versionName}.apk"
+            outputFileName = "TrainSolution.apk"
+        }
+    }
+
+
     buildTypes {
         release {
             minifyEnabled false
@@ -37,8 +46,15 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
+    // https://mvnrepository.com/artifact/cn.hutool/hutool-core
+    implementation 'cn.hutool:hutool-core:5.8.26'
+
     // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core
     implementation 'org.jgrapht:jgrapht-core:1.5.2'
+
+    // https://mvnrepository.com/artifact/org.projectlombok/lombok
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
 
     implementation 'com.github.huangyanbin:SmartTable:2.2.0'
 

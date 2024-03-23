@@ -42,7 +42,7 @@
             android:layout_height="75dp"
             android:id="@+id/maxTransfer"
             android:hint="最多几次中转？"
-            android:text="3"/>
+            android:text="2"/>
     <EditText
             android:layout_width="match_parent"
             android:layout_height="75dp"
