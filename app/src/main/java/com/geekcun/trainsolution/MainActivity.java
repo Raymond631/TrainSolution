@@ -6,9 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.EditText;
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import com.geekcun.trainsolution.dao.DatabaseHelper;
 
@@ -21,9 +19,9 @@ public class MainActivity extends AppCompatActivity {
 
     private AutoCompleteTextView fromStationNameEditText;
     private AutoCompleteTextView toStationNameEditText;
-
     private EditText maxTransferEditText;
     private EditText resultLengthEditText;
+    private RadioGroup radioGroup;
 
     private List<String> fromStationNameList = new ArrayList<>();
     private List<String> toStationNameList = new ArrayList<>();
@@ -37,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         toStationNameEditText = findViewById(R.id.toStationName);
         maxTransferEditText = findViewById(R.id.maxTransfer);
         resultLengthEditText = findViewById(R.id.resultLength);
+        radioGroup = findViewById(R.id.radioGroup);
 
         // 数据库初始化
         try (DatabaseHelper dbHelper = new DatabaseHelper(MainActivity.this, "train.db", null, 1)) {
@@ -78,11 +77,21 @@ public class MainActivity extends AppCompatActivity {
         String toStationName = toStationNameEditText.getText().toString();
         int maxTransfer = Integer.parseInt(maxTransferEditText.getText().toString());
         int resultLength = Integer.parseInt(resultLengthEditText.getText().toString());
+        String algorithm = "带权计算";
+
+        for (int i = 0; i < radioGroup.getChildCount(); i++) {
+            RadioButton rd = (RadioButton) radioGroup.getChildAt(i);
+            if (rd.isChecked()) {
+                algorithm = rd.getText().toString();
+                break;
+            }
+        }
 
         intent.putExtra("fromStationName", fromStationName);
         intent.putExtra("toStationName", toStationName);
         intent.putExtra("maxTransfer", maxTransfer);
         intent.putExtra("resultLength", resultLength);
+        intent.putExtra("algorithm", algorithm);
 
         startActivity(intent);
     }

@@ -50,6 +50,32 @@
             android:hint="返回几条结果？"
             android:text="10"/>
 
+    <RadioGroup
+            android:id="@+id/radioGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:checkedButton="@id/withWeight">
+        <RadioButton
+                android:id="@+id/withWeight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="带权计算"
+                android:textSize="16sp"/>
+        <RadioButton
+                android:id="@+id/noWeight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="无权计算"
+                android:textSize="16sp"/>
+    </RadioGroup>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="注：绝大多数情况下，带权计算更快"
+            android:textColor="#FF0000"
+            android:textSize="14dp"/>
+
     <Button
             android:layout_gravity="center"
             android:layout_width="wrap_content"

@@ -38,6 +38,7 @@ public class TableActivity extends AppCompatActivity {
     private String toStationName;
     private int maxTransfer;
     private int resultLength;
+    private String algorithm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +53,10 @@ public class TableActivity extends AppCompatActivity {
         Intent intent = getIntent();
         fromStationName = intent.getStringExtra("fromStationName");
         toStationName = intent.getStringExtra("toStationName");
-        maxTransfer = intent.getIntExtra("maxTransfer", 5);
-        resultLength = intent.getIntExtra("resultLength", 20);
+        maxTransfer = intent.getIntExtra("maxTransfer", 2);
+        resultLength = intent.getIntExtra("resultLength", 10);
+        algorithm = intent.getStringExtra("algorithm");
+        Log.v("算法：", algorithm);
 
         Thread thread = new Thread(this::getShortPaths);
         thread.start();
@@ -62,12 +65,12 @@ public class TableActivity extends AppCompatActivity {
     public void getShortPaths() {
         long start = System.currentTimeMillis();
 
-        if (maxTransfer <= 2) {
-            DirectedMultigraph<String, LabelEdge> graph = buildGraphNoWeight();
-            yenShortestPathNoWeight(graph, fromStationName, toStationName);
-        } else {
+        if (algorithm.equals("带权计算")) {
             DirectedWeightedMultigraph<String, DefaultWeightedEdge> graph = buildGraph();
             yenShortestPath(graph, fromStationName, toStationName);
+        } else {
+            DirectedMultigraph<String, LabelEdge> graph = buildGraphNoWeight();
+            yenShortestPathNoWeight(graph, fromStationName, toStationName);
         }
 
         long end = System.currentTimeMillis();
@@ -124,11 +127,10 @@ public class TableActivity extends AppCompatActivity {
             } else {
                 handler.post(() -> {
                     resultTable.addData(Collections.singletonList(result), true);
-                    resultTable.getMatrixHelper().flingBottom(200);
+//                    resultTable.getMatrixHelper().flingBottom(200);
                 });
             }
         }
-
     }
 
 
@@ -178,7 +180,7 @@ public class TableActivity extends AppCompatActivity {
             Collections.sort(resultList);
             handler.post(() -> {
                 resultTable.setData(resultList);
-                resultTable.getMatrixHelper().flingTop(200);
+//                resultTable.getMatrixHelper().flingTop(200);
             });
         }
     }
