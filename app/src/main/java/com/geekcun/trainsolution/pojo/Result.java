@@ -13,11 +13,16 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SmartTable(name = "计算结果")
-public class Result {
+public class Result implements Comparable<Result> {
     @SmartColumn(id = 1, name = "路径")
     private List<String> path;
     @SmartColumn(id = 2, name = "总价格")
     private double price;
     @SmartColumn(id = 3, name = "总耗时")
     private String timeCost;
+
+    @Override
+    public int compareTo(Result result) {
+        return Double.compare(this.price, result.price);
+    }
 }
