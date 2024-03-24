@@ -72,7 +72,7 @@
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="注：绝大多数情况下，带权计算更快"
+            android:text="注：只接受1次中转时，用无权计算更快"
             android:textColor="#FF0000"
             android:textSize="14dp"/>
 

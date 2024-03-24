@@ -141,11 +141,7 @@ public class TableActivity extends AppCompatActivity {
         try (SQLiteDatabase db = dbHelper.getReadableDatabase();
              Cursor cursor = db.rawQuery(sql, null)
         ) {
-            int count = 0;
             while (cursor.moveToNext()) {
-                count++;
-                Log.v("count", String.valueOf(count));
-
                 String fromStationName = cursor.getString(0);
                 String toStationName = cursor.getString(1);
                 double price = cursor.getDouble(2);
